@@ -1,0 +1,146 @@
+import { useEffect, useRef } from 'react';
+import * as THREE from 'three';
+
+type Theme = 'dark' | 'light';
+
+interface DottedSurfaceProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Dot color theme: dark = light dots (for dark bg), light = dark dots (for light bg) */
+  theme?: Theme;
+}
+
+export function DottedSurface({ className = '', theme = 'dark', ...props }: DottedSurfaceProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<{
+    scene: THREE.Scene;
+    camera: THREE.PerspectiveCamera;
+    renderer: THREE.WebGLRenderer;
+    geometry: THREE.BufferGeometry;
+    material: THREE.PointsMaterial;
+    animationId: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const SEPARATION = 150;
+    const AMOUNTX = 40;
+    const AMOUNTY = 60;
+
+    const scene = new THREE.Scene();
+    const fogColor = theme === 'dark' ? 0x0a0a0a : 0xffffff;
+    scene.fog = new THREE.Fog(fogColor, 2000, 10000);
+
+    const width = containerRef.current.offsetWidth;
+    const height = containerRef.current.offsetHeight;
+
+    const camera = new THREE.PerspectiveCamera(60, width / height, 1, 10000);
+    camera.position.set(0, 355, 1220);
+
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(width, height);
+    renderer.setClearColor(fogColor, 0);
+
+    containerRef.current.appendChild(renderer.domElement);
+
+    const geometry = new THREE.BufferGeometry();
+    const positions: number[] = [];
+    const colors: number[] = [];
+
+    for (let ix = 0; ix < AMOUNTX; ix++) {
+      for (let iy = 0; iy < AMOUNTY; iy++) {
+        const x = ix * SEPARATION - (AMOUNTX * SEPARATION) / 2;
+        const y = 0;
+        const z = iy * SEPARATION - (AMOUNTY * SEPARATION) / 2;
+        positions.push(x, y, z);
+        if (theme === 'dark') {
+          colors.push(200 / 255, 200 / 255, 200 / 255);
+        } else {
+          colors.push(0, 0, 0);
+        }
+      }
+    }
+
+    const positionAttribute = new THREE.Float32BufferAttribute(positions, 3);
+    positionAttribute.setUsage(THREE.DynamicDrawUsage);
+    geometry.setAttribute('position', positionAttribute);
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+    const material = new THREE.PointsMaterial({
+      size: 8,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.5,
+      sizeAttenuation: true,
+    });
+
+    const points = new THREE.Points(geometry, material);
+    scene.add(points);
+
+    let count = 0;
+    let animationId: number = 0;
+
+    const animate = () => {
+      animationId = requestAnimationFrame(animate);
+      const positionAttribute = geometry.attributes.position;
+      const posArray = positionAttribute.array as Float32Array;
+
+      let i = 0;
+      for (let ix = 0; ix < AMOUNTX; ix++) {
+        for (let iy = 0; iy < AMOUNTY; iy++) {
+          const index = i * 3;
+          posArray[index + 1] =
+            Math.sin((ix + count) * 0.3) * 50 + Math.sin((iy + count) * 0.5) * 50;
+          i++;
+        }
+      }
+      positionAttribute.needsUpdate = true;
+      renderer.render(scene, camera);
+      count += 0.1;
+    };
+
+    const handleResize = () => {
+      if (!containerRef.current) return;
+      const w = containerRef.current.offsetWidth;
+      const h = containerRef.current.offsetHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    };
+
+    window.addEventListener('resize', handleResize);
+    animate();
+
+    sceneRef.current = {
+      scene,
+      camera,
+      renderer,
+      geometry,
+      material,
+      animationId,
+    };
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      cancelAnimationFrame(animationId);
+      if (sceneRef.current) {
+        const { renderer: r, geometry: g, material: m } = sceneRef.current;
+        g.dispose();
+        m.dispose();
+        r.dispose();
+        if (containerRef.current && r.domElement.parentNode === containerRef.current) {
+          containerRef.current.removeChild(r.domElement);
+        }
+      }
+    };
+  }, [theme]);
+
+  return (
+    <div
+      ref={containerRef}
+      className={`pointer-events-none overflow-hidden ${className}`.trim()}
+      aria-hidden="true"
+      {...props}
+    />
+  );
+}
