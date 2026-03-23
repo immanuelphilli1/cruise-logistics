@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from './Button';
-import logo from '../assets/logos.png';
+import logo from '../assets/logos/cruise-logo.png';
 
 const navLinks = [
   { to: '/', label: 'Home' },

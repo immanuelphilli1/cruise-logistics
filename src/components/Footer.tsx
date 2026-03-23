@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { DottedSurface } from './DottedSurface';
-import logo from '../assets/logos.png';
+import logo from '../assets/logos/cruise-logo.png';
 
 const footerLinks = {
   services: [
