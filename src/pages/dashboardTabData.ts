@@ -10,12 +10,12 @@ export interface CarBookingRow {
   customer: string;
   startDate: string;
   endDate: string;
-  status: 'active' | 'paused' | 'inactive';
+  status: 'accepted' | 'denied';
 }
 export const carBookingsRows: CarBookingRow[] = [
-  { id: '1', ref: 'CB-1024', vehicle: 'Mercedes S-Class', customer: 'Acme Corp', startDate: '10 Mar 2025', endDate: '24 Mar 2025', status: 'active' },
-  { id: '2', ref: 'CB-1023', vehicle: 'Toyota Camry', customer: 'Jane Doe', startDate: '01 Mar 2025', endDate: '15 Mar 2025', status: 'active' },
-  { id: '3', ref: 'CB-1022', vehicle: 'BMW 3 Series', customer: 'John Smith', startDate: '20 Feb 2025', endDate: '05 Mar 2025', status: 'inactive' },
+  { id: '1', ref: 'CB-1024', vehicle: 'Mercedes S-Class', customer: 'Acme Corp', startDate: '10 Mar 2025', endDate: '24 Mar 2025', status: 'accepted' },
+  { id: '2', ref: 'CB-1023', vehicle: 'Toyota Camry', customer: 'Jane Doe', startDate: '01 Mar 2025', endDate: '15 Mar 2025', status: 'accepted' },
+  { id: '3', ref: 'CB-1022', vehicle: 'BMW 3 Series', customer: 'John Smith', startDate: '20 Feb 2025', endDate: '05 Mar 2025', status: 'denied' },
 ];
 
 // Cars / Fleet
@@ -23,14 +23,16 @@ export interface CarRow {
   id: string;
   reg: string;
   model: string;
+  amount: number;
+  imageUrl?: string;
   location: string;
   dueService: string;
   status: 'active' | 'paused' | 'inactive';
 }
 export const carsRows: CarRow[] = [
-  { id: '1', reg: 'GT-1234-25', model: 'Mercedes S-Class', location: 'Accra Central', dueService: '15 Apr 2025', status: 'active' },
-  { id: '2', reg: 'GT-5678-25', model: 'Toyota Camry', location: 'Kumasi Depot', dueService: '22 Mar 2025', status: 'active' },
-  { id: '3', reg: 'GT-9012-25', model: 'BMW 3 Series', location: 'Tema', dueService: '10 Mar 2025', status: 'paused' },
+  { id: '1', reg: 'GT-1234-25', model: 'Mercedes S-Class', amount: 1200, location: 'Accra Central', dueService: '15 Apr 2025', status: 'active' },
+  { id: '2', reg: 'GT-5678-25', model: 'Toyota Camry', amount: 900, location: 'Kumasi Depot', dueService: '22 Mar 2025', status: 'active' },
+  { id: '3', reg: 'GT-9012-25', model: 'BMW 3 Series', amount: 1500, location: 'Tema', dueService: '10 Mar 2025', status: 'paused' },
 ];
 
 // Motorbike Leasing

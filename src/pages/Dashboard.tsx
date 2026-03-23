@@ -30,6 +30,7 @@ import {
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { ManagementTable } from '../components/ManagementTable';
+import { addDynamicUser, type UserRole } from '../config/sampleCredentials';
 import {
   carBookingsRows,
   carsRows,
@@ -90,7 +91,7 @@ function getNavIdsForRole(role: 'admin' | 'business' | 'patron' | undefined): Na
     return ['dashboard', 'riders', 'agreement', 'view-site', 'settings', 'help'];
   }
   if (role === 'business') {
-    return ['dashboard', 'motorbike-leasing', 'riders', 'fault-reporting', 'agreement', 'view-site', 'settings', 'help'];
+    return ['dashboard', 'riders', 'fault-reporting', 'agreement', 'view-site', 'settings', 'help'];
   }
   return ['dashboard', 'car-bookings', 'cars', 'motorbike-leasing', 'riders', 'fault-reporting', 'view-site', 'settings', 'help'];
 }
@@ -259,6 +260,39 @@ export function Dashboard() {
   const [motorbikeLeases, setMotorbikeLeases] = useState<MotorbikeLeaseRow[]>(motorbikeLeasingRows);
   const [riders, setRiders] = useState<RiderRow[]>(ridersRows);
   const [faults, setFaults] = useState<FaultRow[]>(faultRows);
+  const [showRaiseFaultModal, setShowRaiseFaultModal] = useState(false);
+  const [newFaultAsset, setNewFaultAsset] = useState('');
+  const [newFaultDescription, setNewFaultDescription] = useState('');
+  const [showAddCarModal, setShowAddCarModal] = useState(false);
+  const [showBusinessesModal, setShowBusinessesModal] = useState(false);
+  const [showAddLeaseModal, setShowAddLeaseModal] = useState(false);
+  const [newCarReg, setNewCarReg] = useState('');
+  const [newCarModel, setNewCarModel] = useState('');
+  const [newCarAmount, setNewCarAmount] = useState('');
+  const [newCarImageUrl, setNewCarImageUrl] = useState('');
+  const [newCarLocation, setNewCarLocation] = useState('');
+  const [newCarDueService, setNewCarDueService] = useState('');
+  const [newLeaseBikes, setNewLeaseBikes] = useState('');
+  const [newLeaseBusiness, setNewLeaseBusiness] = useState('');
+  const [newLeaseRiders, setNewLeaseRiders] = useState('');
+  const [newLeaseStart, setNewLeaseStart] = useState('');
+  const [newLeaseEnd, setNewLeaseEnd] = useState('');
+  const [showAdminCreateModal, setShowAdminCreateModal] = useState(false);
+  const [adminCreateType, setAdminCreateType] = useState<
+    'bike' | 'rider' | 'business-user' | 'patron-user' | null
+  >(null);
+  const [newBikeId, setNewBikeId] = useState('');
+  const [newBikeBusiness, setNewBikeBusiness] = useState('');
+  const [newRiderName, setNewRiderName] = useState('');
+  const [newRiderBike, setNewRiderBike] = useState('');
+  const [newRiderBusiness, setNewRiderBusiness] = useState('');
+  const [newRiderNationalId, setNewRiderNationalId] = useState('');
+  const [newRiderBikeChassisNumber, setNewRiderBikeChassisNumber] = useState('');
+  const [newRiderDriversLicence, setNewRiderDriversLicence] = useState('');
+  const [newUsername, setNewUsername] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [newDisplayName, setNewDisplayName] = useState('');
+  const [credentialMessage, setCredentialMessage] = useState<string | null>(null);
   const [patronOverlay, setPatronOverlay] = useState<PatronOverlay>(null);
   const [expandedBikeId, setExpandedBikeId] = useState<string | null>(null);
   const [expandedBusinessId, setExpandedBusinessId] = useState<string | null>(null);
@@ -270,10 +304,22 @@ export function Dashboard() {
   const isBusiness = user?.role === 'business';
   const patronBikeIds = useMemo(() => new Set(patronBikesRows.map((b) => b.bikeId)), []);
   const patronRiders = useMemo(() => ridersRows.filter((r) => r.bike !== '—' && patronBikeIds.has(r.bike)), [patronBikeIds]);
+  const leasedBusinessesCount = useMemo(
+    () => new Set(motorbikeLeases.map((m) => m.business)).size,
+    [motorbikeLeases]
+  );
 
   const handleLogout = () => {
     logout();
     navigate('/', { replace: true });
+  };
+
+  const openAdminCreateModal = (
+    type: 'bike' | 'rider' | 'business-user' | 'patron-user'
+  ) => {
+    setAdminCreateType(type);
+    setCredentialMessage(null);
+    setShowAdminCreateModal(true);
   };
 
   return (
@@ -348,7 +394,7 @@ export function Dashboard() {
           <div className="p-4 sm:p-6">
             {selected === 'dashboard' && isPatron && (
             <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mb-6 sm:mb-8">
               <button
                 type="button"
                 onClick={() => setPatronOverlay('revenue')}
@@ -768,7 +814,7 @@ export function Dashboard() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
               <button
                 type="button"
-                onClick={() => setSelected('motorbike-leasing')}
+                onClick={() => setSelected('riders')}
                 className="p-4 sm:p-6 rounded-xl border border-neutral-200 bg-white shadow-sm hover:shadow-md transition-shadow text-left w-full"
               >
                 <div className="flex items-center justify-between mb-4">
@@ -779,7 +825,7 @@ export function Dashboard() {
                 </div>
                 <h3 className="font-medium text-neutral-600 mb-1 text-sm sm:text-base">Bikes leased</h3>
                 <p className="text-xl sm:text-2xl font-bold text-primary-black">{businessLeasedBikesCount}</p>
-                <p className="text-xs sm:text-sm text-green-600 mt-1">View contracts</p>
+                <p className="text-xs sm:text-sm text-green-600 mt-1">Open Riders tab</p>
               </button>
 
               <button
@@ -913,6 +959,67 @@ export function Dashboard() {
                 <p className="text-xl sm:text-2xl font-bold text-primary-black">42</p>
                 <p className="text-xs sm:text-sm text-green-600 mt-1">5 pending assignments</p>
               </div>
+
+              <button
+                type="button"
+                onClick={() => setShowBusinessesModal(true)}
+                className="p-4 sm:p-6 rounded-xl border border-neutral-200 bg-white shadow-sm hover:shadow-md transition-shadow text-left w-full"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-2 bg-amber-100 rounded-lg">
+                    <Building2 className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <TrendingUp className="h-4 w-4 text-green-500" />
+                </div>
+                <h3 className="font-medium text-neutral-600 mb-1 text-sm sm:text-base">Businesses working with us</h3>
+                <p className="text-xl sm:text-2xl font-bold text-primary-black">{leasedBusinessesCount}</p>
+                <p className="text-xs sm:text-sm text-green-600 mt-1">Click to view all businesses</p>
+              </button>
+            </div>
+
+            <div className="rounded-xl border border-neutral-200 bg-white p-4 sm:p-6 shadow-sm mb-6 sm:mb-8">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <h3 className="text-lg font-semibold text-primary-black">Admin Controls</h3>
+                {credentialMessage && (
+                  <span className="text-xs text-green-700 bg-green-100 border border-green-200 px-2 py-1 rounded">
+                    {credentialMessage}
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <button
+                  type="button"
+                  onClick={() => openAdminCreateModal('bike')}
+                  className="rounded-lg border border-neutral-200 px-4 py-3 text-left hover:bg-neutral-50"
+                >
+                  <p className="font-medium text-primary-black">Add Bike</p>
+                  <p className="text-xs text-neutral-500">Create and assign to business</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openAdminCreateModal('rider')}
+                  className="rounded-lg border border-neutral-200 px-4 py-3 text-left hover:bg-neutral-50"
+                >
+                  <p className="font-medium text-primary-black">Add Rider</p>
+                  <p className="text-xs text-neutral-500">Assign rider to bike/business</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openAdminCreateModal('business-user')}
+                  className="rounded-lg border border-neutral-200 px-4 py-3 text-left hover:bg-neutral-50"
+                >
+                  <p className="font-medium text-primary-black">Add Business Patron</p>
+                  <p className="text-xs text-neutral-500">Create credentials for login</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openAdminCreateModal('patron-user')}
+                  className="rounded-lg border border-neutral-200 px-4 py-3 text-left hover:bg-neutral-50"
+                >
+                  <p className="font-medium text-primary-black">Add Patron</p>
+                  <p className="text-xs text-neutral-500">Create credentials for login</p>
+                </button>
+              </div>
             </div>
 
             {/* Content Grid */}
@@ -1037,18 +1144,13 @@ export function Dashboard() {
                   { id: 'endDate', label: 'End' },
                   { id: 'status', label: 'Status', render: (r) => (
                     <span className={`px-2 py-1 rounded-lg text-sm font-medium ${
-                      r.status === 'active' ? 'bg-green-100 text-green-700' :
-                      r.status === 'paused' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+                      r.status === 'accepted' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                     }`}>{r.status}</span>
                   ) },
                 ]}
                 rows={carBookings}
                 getRowKey={(r) => r.id}
-                getStatus={(r) => r.status}
-                isAdmin={isAdmin}
-                onAdd={isAdmin ? () => setCarBookings((prev) => [...prev, { id: String(prev.length + 1), ref: `CB-${1000 + prev.length}`, vehicle: 'New Vehicle', customer: '—', startDate: '—', endDate: '—', status: 'active' }]) : undefined}
-                onEdit={isAdmin ? (row) => setCarBookings((prev) => prev.map((r) => (r.id === row.id ? { ...row } : r))) : undefined}
-                onDelete={isAdmin ? (row) => setCarBookings((prev) => prev.filter((r) => r.id !== row.id)) : undefined}
+                isAdmin={false}
                 renderDetail={(row, _onClose) => (
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-3">
@@ -1056,6 +1158,32 @@ export function Dashboard() {
                       <div className="p-3 rounded-lg bg-neutral-100"><span className="text-xs text-neutral-500">Vehicle</span><p className="font-medium">{row.vehicle}</p></div>
                       <div className="p-3 rounded-lg bg-neutral-100"><span className="text-xs text-neutral-500">Customer</span><p className="font-medium">{row.customer}</p></div>
                       <div className="p-3 rounded-lg bg-neutral-100"><span className="text-xs text-neutral-500">Start – End</span><p className="font-medium">{row.startDate} – {row.endDate}</p></div>
+                      {isAdmin && (
+                        <div className="col-span-2 flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setCarBookings((prev) =>
+                                prev.map((r) => (r.id === row.id ? { ...r, status: 'accepted' } : r))
+                              )
+                            }
+                            className="px-3 py-2 rounded-lg bg-green-100 text-green-700 border border-green-200 text-sm font-medium"
+                          >
+                            Mark Accepted
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setCarBookings((prev) =>
+                                prev.map((r) => (r.id === row.id ? { ...r, status: 'denied' } : r))
+                              )
+                            }
+                            className="px-3 py-2 rounded-lg bg-red-100 text-red-700 border border-red-200 text-sm font-medium"
+                          >
+                            Mark Denied
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -1068,7 +1196,8 @@ export function Dashboard() {
                 subtitle={`${cars.length} vehicles`}
                 columns={[
                   { id: 'reg', label: 'Registration' },
-                  { id: 'model', label: 'Model' },
+                  { id: 'model', label: 'Car Name' },
+                  { id: 'amount', label: 'Amount', render: (r) => <span>GH¢ {r.amount.toLocaleString()}</span> },
                   { id: 'location', label: 'Location' },
                   { id: 'dueService', label: 'Due service' },
                   { id: 'status', label: 'Status', render: (r) => (
@@ -1082,16 +1211,23 @@ export function Dashboard() {
                 getRowKey={(r) => r.id}
                 getStatus={(r) => r.status}
                 isAdmin={isAdmin}
-                onAdd={isAdmin ? () => setCars((prev) => [...prev, { id: String(prev.length + 1), reg: 'GT-XXXX-25', model: 'New', location: '—', dueService: '—', status: 'active' }]) : undefined}
+                onAdd={isAdmin ? () => setShowAddCarModal(true) : undefined}
                 onEdit={isAdmin ? (row) => setCars((prev) => prev.map((r) => (r.id === row.id ? { ...row } : r))) : undefined}
                 onDelete={isAdmin ? (row) => setCars((prev) => prev.filter((r) => r.id !== row.id)) : undefined}
                 renderDetail={(row) => (
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-3">
                       <div className="p-3 rounded-lg bg-neutral-100"><span className="text-xs text-neutral-500">Registration</span><p className="font-medium">{row.reg}</p></div>
-                      <div className="p-3 rounded-lg bg-neutral-100"><span className="text-xs text-neutral-500">Model</span><p className="font-medium">{row.model}</p></div>
+                      <div className="p-3 rounded-lg bg-neutral-100"><span className="text-xs text-neutral-500">Car Name</span><p className="font-medium">{row.model}</p></div>
+                      <div className="p-3 rounded-lg bg-neutral-100"><span className="text-xs text-neutral-500">Amount</span><p className="font-medium">GH¢ {row.amount.toLocaleString()}</p></div>
                       <div className="p-3 rounded-lg bg-neutral-100"><span className="text-xs text-neutral-500">Location</span><p className="font-medium">{row.location}</p></div>
                       <div className="p-3 rounded-lg bg-neutral-100"><span className="text-xs text-neutral-500">Due service</span><p className="font-medium">{row.dueService}</p></div>
+                      {row.imageUrl && (
+                        <div className="col-span-2 p-3 rounded-lg bg-neutral-100">
+                          <span className="text-xs text-neutral-500 block mb-2">Car Image</span>
+                          <img src={row.imageUrl} alt={row.model} className="w-full max-h-52 object-cover rounded-lg border border-neutral-200" />
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -1120,7 +1256,7 @@ export function Dashboard() {
                 getStatus={(r) => r.status}
                 isAdmin={isAdmin}
                 canRaiseFault={canRaiseFault}
-                onAdd={isAdmin ? () => setMotorbikeLeases((prev) => [...prev, { id: String(prev.length + 1), bikeId: 'New', business: '—', startDate: '—', endDate: '—', riders: 0, status: 'active' }]) : undefined}
+                onAdd={isAdmin ? () => setShowAddLeaseModal(true) : undefined}
                 onEdit={isAdmin ? (row) => setMotorbikeLeases((prev) => prev.map((r) => (r.id === row.id ? { ...row } : r))) : undefined}
                 onDelete={isAdmin ? (row) => setMotorbikeLeases((prev) => prev.filter((r) => r.id !== row.id)) : undefined}
                 onRaiseFault={canRaiseFault ? (_row) => { setSelected('fault-reporting'); } : undefined}
@@ -1158,10 +1294,10 @@ export function Dashboard() {
                 getStatus={(r) => r.status}
                 isAdmin={isAdmin}
                 canRaiseFault={canRaiseFault && !isPatron}
-                onAdd={isAdmin ? () => setRiders((prev) => [...prev, { id: String(prev.length + 1), name: 'New Rider', bike: '—', business: '—', assignedDate: '—', status: 'active' }]) : undefined}
+                onAdd={isAdmin ? () => openAdminCreateModal('rider') : undefined}
                 onEdit={isAdmin ? (row) => setRiders((prev) => prev.map((r) => (r.id === row.id ? { ...row } : r))) : undefined}
                 onDelete={isAdmin ? (row) => setRiders((prev) => prev.filter((r) => r.id !== row.id)) : undefined}
-                onRaiseFault={canRaiseFault && !isPatron ? (_row) => {} : undefined}
+                onRaiseFault={canRaiseFault && !isPatron ? (_row) => setSelected('fault-reporting') : undefined}
                 renderDetail={(row) => (
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1179,44 +1315,451 @@ export function Dashboard() {
             )}
 
             {selected === 'fault-reporting' && (
-              <ManagementTable<FaultRow>
-                title="Fault Reporting"
-                subtitle={`${faults.length} reports`}
-                columns={[
-                  { id: 'ref', label: 'Ref' },
-                  { id: 'asset', label: 'Asset' },
-                  { id: 'reportedBy', label: 'Reported by' },
-                  { id: 'reportedAt', label: 'Date' },
-                  { id: 'description', label: 'Description' },
-                  { id: 'status', label: 'Status', render: (r) => (
-                    <span className={`px-2 py-1 rounded-lg text-sm font-medium ${
-                      r.status === 'active' ? 'bg-green-100 text-green-700' :
-                      r.status === 'paused' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
-                    }`}>{r.status}</span>
-                  ) },
-                ]}
-                rows={faults}
-                getRowKey={(r) => r.id}
-                getStatus={(r) => r.status}
-                isAdmin={isAdmin}
-                canRaiseFault={canRaiseFault}
-                onAdd={isAdmin ? () => setFaults((prev) => [...prev, { id: String(prev.length + 1), ref: `FR-${100 + prev.length}`, asset: '—', reportedBy: '—', reportedAt: '—', description: 'New fault', status: 'active' }]) : undefined}
-                onEdit={isAdmin ? (row) => setFaults((prev) => prev.map((r) => (r.id === row.id ? { ...row } : r))) : undefined}
-                onDelete={isAdmin ? (row) => setFaults((prev) => prev.filter((r) => r.id !== row.id)) : undefined}
-                onRaiseFault={canRaiseFault ? (row) => setFaults((prev) => [...prev, { id: String(prev.length + 1), ref: `FR-${100 + prev.length}`, asset: row.asset, reportedBy: user?.displayName ?? '—', reportedAt: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }), description: 'Raised from detail view', status: 'active' }]) : undefined}
-                renderDetail={(row) => (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="p-3 rounded-lg bg-neutral-100"><span className="text-xs text-neutral-500">Ref</span><p className="font-medium">{row.ref}</p></div>
-                      <div className="p-3 rounded-lg bg-neutral-100"><span className="text-xs text-neutral-500">Asset</span><p className="font-medium">{row.asset}</p></div>
-                      <div className="p-3 rounded-lg bg-neutral-100"><span className="text-xs text-neutral-500">Reported by</span><p className="font-medium">{row.reportedBy}</p></div>
-                      <div className="p-3 rounded-lg bg-neutral-100"><span className="text-xs text-neutral-500">Date</span><p className="font-medium">{row.reportedAt}</p></div>
-                      <div className="col-span-2 p-3 rounded-lg bg-neutral-100"><span className="text-xs text-neutral-500">Description</span><p className="font-medium">{row.description}</p></div>
+              <>
+                <div className="max-w-6xl mx-auto mb-4 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowRaiseFaultModal(true)}
+                    className="px-4 py-2 rounded-lg bg-bronze-gold/10 border border-bronze-gold/30 text-bronze-gold font-medium hover:bg-bronze-gold/20 transition-colors"
+                  >
+                    Add New Fault
+                  </button>
+                </div>
+
+                <ManagementTable<FaultRow>
+                  title="Fault Reporting"
+                  subtitle={`${faults.length} reports`}
+                  columns={[
+                    { id: 'ref', label: 'Ref' },
+                    { id: 'asset', label: 'Asset' },
+                    { id: 'reportedBy', label: 'Reported by' },
+                    { id: 'reportedAt', label: 'Date' },
+                    { id: 'description', label: 'Description' },
+                    { id: 'status', label: 'Status', render: (r) => (
+                      <span className={`px-2 py-1 rounded-lg text-sm font-medium ${
+                        r.status === 'active' ? 'bg-green-100 text-green-700' :
+                        r.status === 'paused' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+                      }`}>{r.status}</span>
+                    ) },
+                  ]}
+                  rows={faults}
+                  getRowKey={(r) => r.id}
+                  getStatus={(r) => r.status}
+                  isAdmin={isAdmin}
+                  canRaiseFault={false}
+                  onAdd={isAdmin ? () => setFaults((prev) => [...prev, { id: String(prev.length + 1), ref: `FR-${100 + prev.length}`, asset: '—', reportedBy: '—', reportedAt: '—', description: 'New fault', status: 'active' }]) : undefined}
+                  onEdit={isAdmin ? (row) => setFaults((prev) => prev.map((r) => (r.id === row.id ? { ...row } : r))) : undefined}
+                  onDelete={isAdmin ? (row) => setFaults((prev) => prev.filter((r) => r.id !== row.id)) : undefined}
+                  onRaiseFault={undefined}
+                  renderDetail={(row) => (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="p-3 rounded-lg bg-neutral-100"><span className="text-xs text-neutral-500">Ref</span><p className="font-medium">{row.ref}</p></div>
+                        <div className="p-3 rounded-lg bg-neutral-100"><span className="text-xs text-neutral-500">Asset</span><p className="font-medium">{row.asset}</p></div>
+                        <div className="p-3 rounded-lg bg-neutral-100"><span className="text-xs text-neutral-500">Reported by</span><p className="font-medium">{row.reportedBy}</p></div>
+                        <div className="p-3 rounded-lg bg-neutral-100"><span className="text-xs text-neutral-500">Date</span><p className="font-medium">{row.reportedAt}</p></div>
+                        <div className="col-span-2 p-3 rounded-lg bg-neutral-100"><span className="text-xs text-neutral-500">Description</span><p className="font-medium">{row.description}</p></div>
+                      </div>
                     </div>
-                  </div>
-                )}
-              />
+                  )}
+                />
+
+                <AnimatePresence>
+                  {showRaiseFaultModal && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md"
+                      onClick={() => setShowRaiseFaultModal(false)}
+                    >
+                      <motion.div
+                        initial={{ scale: 0.96, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.96, opacity: 0 }}
+                        className="w-full max-w-lg rounded-2xl border border-neutral-200 bg-white shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex items-center justify-between p-4 border-b border-neutral-200">
+                          <h3 className="text-lg font-semibold text-primary-black">Raise New Fault</h3>
+                          <button
+                            type="button"
+                            onClick={() => setShowRaiseFaultModal(false)}
+                            className="p-2 rounded-lg hover:bg-neutral-100"
+                            aria-label="Close"
+                          >
+                            <X className="h-5 w-5" />
+                          </button>
+                        </div>
+                        <div className="p-4 space-y-4">
+                          <div>
+                            <label className="text-sm font-medium text-neutral-700 block mb-1">Asset</label>
+                            <input
+                              value={newFaultAsset}
+                              onChange={(e) => setNewFaultAsset(e.target.value)}
+                              placeholder="e.g. Bike #07"
+                              className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-bronze-gold/40"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-neutral-700 block mb-1">Fault Description</label>
+                            <textarea
+                              value={newFaultDescription}
+                              onChange={(e) => setNewFaultDescription(e.target.value)}
+                              placeholder="Describe the fault..."
+                              rows={4}
+                              className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-bronze-gold/40"
+                            />
+                          </div>
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setShowRaiseFaultModal(false)}
+                              className="px-3 py-2 rounded-lg border border-neutral-300 text-neutral-600 hover:bg-neutral-50"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!newFaultAsset.trim() || !newFaultDescription.trim()) return;
+                                setFaults((prev) => [
+                                  ...prev,
+                                  {
+                                    id: String(prev.length + 1),
+                                    ref: `FR-${100 + prev.length}`,
+                                    asset: newFaultAsset.trim(),
+                                    reportedBy: user?.displayName ?? '—',
+                                    reportedAt: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+                                    description: newFaultDescription.trim(),
+                                    status: 'active',
+                                  },
+                                ]);
+                                setNewFaultAsset('');
+                                setNewFaultDescription('');
+                                setShowRaiseFaultModal(false);
+                              }}
+                              className="px-3 py-2 rounded-lg bg-bronze-gold/10 border border-bronze-gold/30 text-bronze-gold font-medium hover:bg-bronze-gold/20"
+                            >
+                              Submit Fault
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </>
             )}
+
+            <AnimatePresence>
+              {showBusinessesModal && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md"
+                  onClick={() => setShowBusinessesModal(false)}
+                >
+                  <motion.div
+                    initial={{ scale: 0.96, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.96, opacity: 0 }}
+                    className="w-full max-w-2xl rounded-2xl border border-neutral-200 bg-white shadow-2xl"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center justify-between p-4 border-b border-neutral-200">
+                      <h3 className="text-lg font-semibold text-primary-black">Businesses working with us</h3>
+                      <button type="button" onClick={() => setShowBusinessesModal(false)} className="p-2 rounded-lg hover:bg-neutral-100" aria-label="Close">
+                        <X className="h-5 w-5" />
+                      </button>
+                    </div>
+                    <div className="p-4 max-h-[70vh] overflow-y-auto">
+                      <div className="divide-y divide-neutral-100 rounded-lg border border-neutral-200 overflow-hidden">
+                        {Array.from(new Set(motorbikeLeases.map((m) => m.business))).map((business) => {
+                          const contracts = motorbikeLeases.filter((m) => m.business === business);
+                          const ridersCount = contracts.reduce((sum, c) => sum + c.riders, 0);
+                          return (
+                            <div key={business} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 py-3">
+                              <span className="font-medium text-primary-black">{business}</span>
+                              <div className="text-xs sm:text-sm text-neutral-600 flex gap-3">
+                                <span>{contracts.length} contract(s)</span>
+                                <span>{ridersCount} rider(s)</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+
+              {showAddLeaseModal && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md"
+                  onClick={() => setShowAddLeaseModal(false)}
+                >
+                  <motion.div
+                    initial={{ scale: 0.96, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.96, opacity: 0 }}
+                    className="w-full max-w-lg rounded-2xl border border-neutral-200 bg-white shadow-2xl"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center justify-between p-4 border-b border-neutral-200">
+                      <h3 className="text-lg font-semibold text-primary-black">Add Motorbike Lease</h3>
+                      <button type="button" onClick={() => setShowAddLeaseModal(false)} className="p-2 rounded-lg hover:bg-neutral-100" aria-label="Close">
+                        <X className="h-5 w-5" />
+                      </button>
+                    </div>
+                    <div className="p-4 space-y-3">
+                      <textarea value={newLeaseBikes} onChange={(e) => setNewLeaseBikes(e.target.value)} placeholder="Bikes (comma separated, e.g. Bike #30, Bike #31)" rows={3} className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm" />
+                      <input value={newLeaseBusiness} onChange={(e) => setNewLeaseBusiness(e.target.value)} placeholder="Business" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm" />
+                      <input value={newLeaseRiders} onChange={(e) => setNewLeaseRiders(e.target.value)} placeholder="Riders count" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm" />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <input value={newLeaseStart} onChange={(e) => setNewLeaseStart(e.target.value)} placeholder="Start date" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm" />
+                        <input value={newLeaseEnd} onChange={(e) => setNewLeaseEnd(e.target.value)} placeholder="End date" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm" />
+                      </div>
+                      <div className="flex justify-end gap-2 pt-2">
+                        <button type="button" onClick={() => setShowAddLeaseModal(false)} className="px-3 py-2 rounded-lg border border-neutral-300 text-neutral-600">Cancel</button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!newLeaseBikes.trim() || !newLeaseBusiness.trim()) return;
+                            setMotorbikeLeases((prev) => [
+                              ...prev,
+                              {
+                                id: String(prev.length + 1),
+                                bikeId: newLeaseBikes.trim(),
+                                business: newLeaseBusiness.trim(),
+                                startDate: newLeaseStart.trim() || '—',
+                                endDate: newLeaseEnd.trim() || '—',
+                                riders: Number(newLeaseRiders) || 0,
+                                status: 'active',
+                              },
+                            ]);
+                            setNewLeaseBikes('');
+                            setNewLeaseBusiness('');
+                            setNewLeaseRiders('');
+                            setNewLeaseStart('');
+                            setNewLeaseEnd('');
+                            setShowAddLeaseModal(false);
+                          }}
+                          className="px-3 py-2 rounded-lg bg-bronze-gold/10 border border-bronze-gold/30 text-bronze-gold font-medium"
+                        >
+                          Add Lease
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+
+              {showAddCarModal && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md"
+                  onClick={() => setShowAddCarModal(false)}
+                >
+                  <motion.div
+                    initial={{ scale: 0.96, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.96, opacity: 0 }}
+                    className="w-full max-w-lg rounded-2xl border border-neutral-200 bg-white shadow-2xl"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center justify-between p-4 border-b border-neutral-200">
+                      <h3 className="text-lg font-semibold text-primary-black">Add Car</h3>
+                      <button type="button" onClick={() => setShowAddCarModal(false)} className="p-2 rounded-lg hover:bg-neutral-100" aria-label="Close">
+                        <X className="h-5 w-5" />
+                      </button>
+                    </div>
+                    <div className="p-4 space-y-3">
+                      <input value={newCarModel} onChange={(e) => setNewCarModel(e.target.value)} placeholder="Car name" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm" />
+                      <input value={newCarAmount} onChange={(e) => setNewCarAmount(e.target.value)} placeholder="Amount (e.g. 1200)" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm" />
+                      <input value={newCarReg} onChange={(e) => setNewCarReg(e.target.value)} placeholder="Registration (e.g. GT-1111-26)" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm" />
+                      <div>
+                        <label className="text-xs text-neutral-500 block mb-1">Picture upload</label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) {
+                              setNewCarImageUrl('');
+                              return;
+                            }
+                            setNewCarImageUrl(URL.createObjectURL(file));
+                          }}
+                          className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                        />
+                        {newCarImageUrl && (
+                          <img src={newCarImageUrl} alt="Car preview" className="mt-2 w-full max-h-40 object-cover rounded-lg border border-neutral-200" />
+                        )}
+                      </div>
+                      <input value={newCarLocation} onChange={(e) => setNewCarLocation(e.target.value)} placeholder="Location" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm" />
+                      <input value={newCarDueService} onChange={(e) => setNewCarDueService(e.target.value)} placeholder="Due service date" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm" />
+                      <div className="flex justify-end gap-2 pt-2">
+                        <button type="button" onClick={() => setShowAddCarModal(false)} className="px-3 py-2 rounded-lg border border-neutral-300 text-neutral-600">Cancel</button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!newCarReg.trim() || !newCarModel.trim()) return;
+                            setCars((prev) => [
+                              ...prev,
+                              {
+                                id: String(prev.length + 1),
+                                reg: newCarReg.trim(),
+                                model: newCarModel.trim(),
+                                amount: Number(newCarAmount) || 0,
+                                imageUrl: newCarImageUrl || undefined,
+                                location: newCarLocation.trim() || '—',
+                                dueService: newCarDueService.trim() || '—',
+                                status: 'active',
+                              },
+                            ]);
+                            setNewCarReg('');
+                            setNewCarModel('');
+                            setNewCarAmount('');
+                            setNewCarImageUrl('');
+                            setNewCarLocation('');
+                            setNewCarDueService('');
+                            setShowAddCarModal(false);
+                          }}
+                          className="px-3 py-2 rounded-lg bg-bronze-gold/10 border border-bronze-gold/30 text-bronze-gold font-medium"
+                        >
+                          Add Car
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+              {showAdminCreateModal && adminCreateType && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md"
+                  onClick={() => setShowAdminCreateModal(false)}
+                >
+                  <motion.div
+                    initial={{ scale: 0.96, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.96, opacity: 0 }}
+                    className="w-full max-w-lg rounded-2xl border border-neutral-200 bg-white shadow-2xl"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center justify-between p-4 border-b border-neutral-200">
+                      <h3 className="text-lg font-semibold text-primary-black">
+                        {adminCreateType === 'bike' && 'Add Bike'}
+                        {adminCreateType === 'rider' && 'Add Rider'}
+                        {adminCreateType === 'business-user' && 'Add Business Patron User'}
+                        {adminCreateType === 'patron-user' && 'Add Patron User'}
+                      </h3>
+                      <button type="button" onClick={() => setShowAdminCreateModal(false)} className="p-2 rounded-lg hover:bg-neutral-100" aria-label="Close">
+                        <X className="h-5 w-5" />
+                      </button>
+                    </div>
+                    <div className="p-4 space-y-3">
+                      {adminCreateType === 'bike' && (
+                        <>
+                          <input value={newBikeId} onChange={(e) => setNewBikeId(e.target.value)} placeholder="Bike ID (e.g. Bike #28)" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm" />
+                          <input value={newBikeBusiness} onChange={(e) => setNewBikeBusiness(e.target.value)} placeholder="Business name" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm" />
+                        </>
+                      )}
+                      {adminCreateType === 'rider' && (
+                        <>
+                          <input value={newRiderName} onChange={(e) => setNewRiderName(e.target.value)} placeholder="Rider full name" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm" />
+                          <input value={newRiderBike} onChange={(e) => setNewRiderBike(e.target.value)} placeholder="Bike ID assigned" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm" />
+                          <input value={newRiderBusiness} onChange={(e) => setNewRiderBusiness(e.target.value)} placeholder="Business name" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm" />
+                          <input value={newRiderNationalId} onChange={(e) => setNewRiderNationalId(e.target.value)} placeholder="National ID" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm" />
+                          <input value={newRiderBikeChassisNumber} onChange={(e) => setNewRiderBikeChassisNumber(e.target.value)} placeholder="Bike chassis number" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm" />
+                          <input value={newRiderDriversLicence} onChange={(e) => setNewRiderDriversLicence(e.target.value)} placeholder="Drivers licence" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm" />
+                        </>
+                      )}
+                      {(adminCreateType === 'business-user' || adminCreateType === 'patron-user') && (
+                        <>
+                          <input value={newDisplayName} onChange={(e) => setNewDisplayName(e.target.value)} placeholder="Display name" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm" />
+                          <input value={newUsername} onChange={(e) => setNewUsername(e.target.value)} placeholder="Username" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm" />
+                          <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Password" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm" />
+                        </>
+                      )}
+                      <div className="flex justify-end gap-2 pt-2">
+                        <button type="button" onClick={() => setShowAdminCreateModal(false)} className="px-3 py-2 rounded-lg border border-neutral-300 text-neutral-600">Cancel</button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (adminCreateType === 'bike') {
+                              if (!newBikeId.trim()) return;
+                              setMotorbikeLeases((prev) => [
+                                ...prev,
+                                {
+                                  id: String(prev.length + 1),
+                                  bikeId: newBikeId.trim(),
+                                  business: newBikeBusiness.trim() || '—',
+                                  startDate: '—',
+                                  endDate: '—',
+                                  riders: 0,
+                                  status: 'active',
+                                },
+                              ]);
+                              setNewBikeId('');
+                              setNewBikeBusiness('');
+                            } else if (adminCreateType === 'rider') {
+                              if (!newRiderName.trim()) return;
+                              setRiders((prev) => [
+                                ...prev,
+                                {
+                                  id: String(prev.length + 1),
+                                  name: newRiderName.trim(),
+                                  bike: newRiderBike.trim() || '—',
+                                  business: newRiderBusiness.trim() || '—',
+                                  assignedDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+                                  status: 'active',
+                                  nationalId: '—',
+                                  bikeChassisNumber: '—',
+                                  driversLicence: '—',
+                                },
+                              ]);
+                              setNewRiderName('');
+                              setNewRiderBike('');
+                              setNewRiderBusiness('');
+                            } else {
+                              if (!newUsername.trim() || !newPassword.trim() || !newDisplayName.trim()) return;
+                              const role: UserRole = adminCreateType === 'business-user' ? 'business' : 'patron';
+                              addDynamicUser({
+                                username: newUsername.trim(),
+                                password: newPassword,
+                                role,
+                                displayName: newDisplayName.trim(),
+                              });
+                              setCredentialMessage(`Created ${role} login for "${newDisplayName.trim()}" (${newUsername.trim()}).`);
+                              setNewDisplayName('');
+                              setNewUsername('');
+                              setNewPassword('');
+                            }
+                            setShowAdminCreateModal(false);
+                          }}
+                          className="px-3 py-2 rounded-lg bg-bronze-gold/10 border border-bronze-gold/30 text-bronze-gold font-medium"
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {selected === 'agreement' && (
               <div className="max-w-3xl rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
