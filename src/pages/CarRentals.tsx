@@ -94,6 +94,7 @@ function CarBookingModal({
   const [driversLicence, setDriversLicence] = useState('');
   const [driveType, setDriveType] = useState<'self-drive' | 'chauffeur-drive'>('self-drive');
   const [duration, setDuration] = useState('');
+  const [startDate, setStartDate] = useState('');
   const [durationUnit, setDurationUnit] = useState<'days' | 'weeks'>('days');
   const [phone, setPhone] = useState('');
 
@@ -260,6 +261,19 @@ function CarBookingModal({
                     <option value="weeks">Weeks</option>
                   </select>
                 </div>
+              </div>
+              <div>
+                <label htmlFor="book-start-date" className="block text-sm font-medium text-primary-black mb-1">
+                  Start Date                
+                  </label>
+                <input
+                  id="book-start-date"
+                  type="date"
+                  required
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-primary-black focus:border-bronze-gold focus:outline-none focus:ring-1 focus:ring-bronze-gold"
+                />
               </div>
               <div>
                 <label htmlFor="book-phone" className="block text-sm font-medium text-primary-black mb-1">
